@@ -1,10 +1,14 @@
 import React, { useState } from "react";
-import FastService from "./FastService";
-import Diagnostics from "./Diagnostics";
-import ReplaceEngine from "./ReplaceEngine";
+import FastService from "./User/FastService.jsx";
+import Diagnostics from "./User/Diagnostics.jsx";
+import ReplaceEngine from "./User/ReplaceEngine.jsx";
+import Reclamation from "./User/Reclamation.jsx";  
+import About from "./User/About.jsx";
+import Contact from "./User/Contact.jsx";
 import fastServiceImg from "../assets/FastService.png";
 import ReplaceEngineImg from "../assets/ReplaceEngine.png";
 import DiagnosticsImg from "../assets/Diagnostics.png";
+import ReclamationImg from "../assets/Reclamation.png";
 import Navbar from "./Navbar";
 
 const MainPage = () => {
@@ -16,8 +20,8 @@ const MainPage = () => {
   return (
     <div className="min-h-screen w-full bg-white flex flex-col items-center justify-center relative">
       <Navbar />
-
-      {/* Add spacing to avoid navbar overlap */}
+    <section id="our-service">
+    {/* Add spacing to avoid navbar overlap */}
       <div className="mt-28 grid grid-cols-1 sm:grid-cols-2 gap-10 p-10 justify-items-center">
         {/* 🟥 Fast Service */}
         <div
@@ -49,9 +53,12 @@ const MainPage = () => {
         {/* 🟨 Box 4 */}
         <div
           onClick={() => handleOpen("box4")}
-          className="cursor-pointer w-[24rem] h-[16rem] border border-gray-300 rounded-xl flex items-center justify-center shadow-md hover:scale-105 hover:shadow-xl transition-all duration-300 bg-gray-100"
+          className="cursor-pointer w-[24rem] h-[16rem] border border-gray-300 rounded-xl flex items-center justify-center shadow-md hover:scale-105 hover:shadow-xl transition-all duration-300 bg-cover bg-center"
+          style={{
+            backgroundImage: `url(${ReclamationImg})`,
+          }}
         >
-          <p className="text-2xl font-semibold">Box 4</p>
+         
         </div>
       </div>
 
@@ -70,15 +77,19 @@ const MainPage = () => {
             {openBox === "box1" && <FastService />}
             {openBox === "box2" && <Diagnostics />}
             {openBox === "box3" && <ReplaceEngine />}
-            {openBox === "box4" && (
-              <div className="p-4 text-center">
-                <h2 className="text-2xl font-semibold mb-4">Box 4 Content</h2>
-                <p>Any custom component can go here too.</p>
-              </div>
-            )}
+            {openBox === "box4" && <Reclamation />}
           </div>
         </div>
       )}
+</section>
+    
+      <section id="about-us">
+   <About /></section>
+         
+<section id="contact">
+  <Contact />
+</section>
+     
     </div>
   );
 };

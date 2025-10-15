@@ -1,8 +1,8 @@
 import './App.css';
 import { Routes, Route } from "react-router-dom";
-import Login from './componant/Login';
+import Login from './componant/Admin/Login';
 import MainPage from './componant/MainPage';
-import RDVTable from "./componant/Rdv"
+import RDVTable from "./componant/Admin/Rdv"
 function App() {
   return (
     <div className="App">
