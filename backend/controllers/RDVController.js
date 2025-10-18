@@ -4,17 +4,18 @@ import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
 import dotenv from "dotenv";
 import fs from "fs";
+import validator from "validator";
 
 dotenv.config();
 
-// 🧩 Cloudinary Configuration
+// Cloudinary configuration
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// 🗂️ Multer Setup for Local Temp Storage
+// Multer setup for temporary local storage
 const mediaStorage = multer.diskStorage({
   destination: function (req, file, cb) {
     const uploadPath = path.join(process.cwd(), "uploads");
@@ -31,21 +32,26 @@ const mediaStorage = multer.diskStorage({
 
 export const mediaUpload = multer({
   storage: mediaStorage,
-  fileFilter: function (req, file, cb) {
-    const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp", "video/mp4"];
+  fileFilter: (req, file, cb) => {
+    const allowedMimeTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "video/mp4",
+    ];
     if (allowedMimeTypes.includes(file.mimetype)) cb(null, true);
     else cb({ message: "Unsupported file format" }, false);
   },
   limits: { fileSize: 100 * 1024 * 1024 }, // 100MB
 });
 
-// 🧠 Helper Functions
+// Upload files to Cloudinary
 const cloudinaryUploadFile = async (filePath) => {
   try {
     const result = await cloudinary.uploader.upload(filePath, {
       resource_type: "auto",
     });
-    fs.unlinkSync(filePath); // delete local temp file
+    fs.unlinkSync(filePath); // delete temp file
     return result.secure_url;
   } catch (error) {
     console.error("Cloudinary upload failed:", error.message);
@@ -59,30 +65,58 @@ const uploadFiles = async (files = []) => {
   return uploaded;
 };
 
-// Compare two dates ignoring timezones
+// Compare dates ignoring time
 const sameDay = (d1, d2) =>
   d1.getFullYear() === d2.getFullYear() &&
   d1.getMonth() === d2.getMonth() &&
   d1.getDate() === d2.getDate();
 
-// 🆕 Create RDV (Normal)
+// -------------------- CONTROLLERS -------------------- //
+
+// Create Normal RDV
 export const createRDV = async (req, res) => {
   try {
-    const { First_Name, Last_Name, Matricule, Model, Motor_type, Date_RDV, Poste } = req.body;
+    const {
+      First_Name,
+      Last_Name,
+      phone,
+      Matricule,
+      Model,
+      Motor_type,
+      Date_RDV,
+      Poste,
+      description,
+    } = req.body;
 
-    // Validate required fields
-    if (!First_Name || !Last_Name || !Matricule || !Model || !Motor_type || !Date_RDV || !Poste)
+    // Validation
+    if (
+      !First_Name ||
+      !Last_Name ||
+      !phone ||
+      !Matricule ||
+      !Model ||
+      !Motor_type ||
+      !Date_RDV ||
+      !Poste
+    )
       return res.status(400).json({ message: "Missing required fields" });
 
-    // Prevent past date booking
+    if (!validator.isMobilePhone(phone, "any"))
+      return res.status(400).json({ message: "Invalid phone number" });
+
     if (new Date(Date_RDV) < new Date())
       return res.status(400).json({ message: "Cannot book a past date" });
 
-    // Prevent duplicate booking for Fast Service
     if (Poste === "Fast service") {
-      const existing = await RDV.findOne({ Poste: "Fast service", Date_RDV, Type: true });
+      const existing = await RDV.findOne({
+        Poste: "Fast service",
+        Date_RDV,
+        Type: true,
+      });
       if (existing)
-        return res.status(400).json({ message: "This date is already booked for Fast service" });
+        return res
+          .status(400)
+          .json({ message: "This date is already booked for Fast service" });
     }
 
     const DisabledDates = new Date(Date_RDV);
@@ -91,6 +125,7 @@ export const createRDV = async (req, res) => {
     const newRDV = new RDV({
       First_Name,
       Last_Name,
+      phone,
       Matricule,
       Model,
       Motor_type,
@@ -99,6 +134,7 @@ export const createRDV = async (req, res) => {
       Images: uploadedUrls,
       DisabledDates,
       Type: false,
+      description,
     });
 
     const savedRDV = await newRDV.save();
@@ -109,21 +145,50 @@ export const createRDV = async (req, res) => {
   }
 };
 
-// 🆕 Create RDV (Fast Service — blocks 3 consecutive days)
+// Create Fast Service RDV (blocks 3 consecutive days)
 export const createRDVFS = async (req, res) => {
   try {
-    const { First_Name, Last_Name, Matricule, Model, Motor_type, Date_RDV, Poste } = req.body;
+    const {
+      First_Name,
+      Last_Name,
+      phone,
+      Matricule,
+      Model,
+      Motor_type,
+      Date_RDV,
+      Poste,
+      description,
+    } = req.body;
 
-    if (!First_Name || !Last_Name || !Matricule || !Model || !Motor_type || !Date_RDV || !Poste)
+    // Validation
+    if (
+      !First_Name ||
+      !Last_Name ||
+      !phone ||
+      !Matricule ||
+      !Model ||
+      !Motor_type ||
+      !Date_RDV ||
+      !Poste
+    )
       return res.status(400).json({ message: "Missing required fields" });
+
+    if (!validator.isMobilePhone(phone, "any"))
+      return res.status(400).json({ message: "Invalid phone number" });
 
     if (new Date(Date_RDV) < new Date())
       return res.status(400).json({ message: "Cannot book a past date" });
 
     if (Poste === "Fast service") {
-      const existing = await RDV.findOne({ Poste: "Fast service", Date_RDV, Type: true });
+      const existing = await RDV.findOne({
+        Poste: "Fast service",
+        Date_RDV,
+        Type: true,
+      });
       if (existing)
-        return res.status(400).json({ message: "This date is already booked for Fast service" });
+        return res
+          .status(400)
+          .json({ message: "This date is already booked for Fast service" });
     }
 
     const startDate = new Date(Date_RDV);
@@ -139,6 +204,7 @@ export const createRDVFS = async (req, res) => {
     const newRDV = new RDV({
       First_Name,
       Last_Name,
+      phone,
       Matricule,
       Model,
       Motor_type,
@@ -147,17 +213,20 @@ export const createRDVFS = async (req, res) => {
       Images: uploadedUrls,
       DisabledDates,
       Type: false,
+      description,
     });
 
     const savedRDV = await newRDV.save();
     res.status(201).json(savedRDV);
   } catch (error) {
     console.error("Error creating Fast Service RDV:", error);
-    res.status(500).json({ message: "Error creating Fast Service RDV", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error creating Fast Service RDV", error: error.message });
   }
 };
 
-// ✅ Confirm RDV
+// Confirm RDV
 export const confirmRDV = async (req, res) => {
   try {
     const { id } = req.params;
@@ -167,6 +236,7 @@ export const confirmRDV = async (req, res) => {
     rdv.Type = true;
     await rdv.save();
 
+    // Update DisabledDates for same Poste
     const samePosteRDVs = await RDV.find({ Poste: rdv.Poste });
     for (const r of samePosteRDVs) {
       for (const d of rdv.DisabledDates) {
@@ -188,16 +258,14 @@ export const confirmRDV = async (req, res) => {
   }
 };
 
-// ❌ Cancel RDV (and clean up DisabledDates)
+// Cancel RDV
 export const cancelRDV = async (req, res) => {
   try {
     const { id } = req.params;
-
-    // Find the RDV to cancel
     const rdv = await RDV.findById(id);
     if (!rdv) return res.status(404).json({ message: "RDV not found" });
 
-    // Remove this RDV's dates from DisabledDates of all RDVs of the same Poste
+    // Remove dates from other RDVs
     if (rdv.DisabledDates.length > 0) {
       await RDV.updateMany(
         { Poste: rdv.Poste },
@@ -205,17 +273,15 @@ export const cancelRDV = async (req, res) => {
       );
     }
 
-    // Delete the RDV
     await RDV.findByIdAndDelete(id);
-
-    res.status(200).json({ message: "✅ RDV canceled and dates freed" });
+    res.status(200).json({ message: "RDV canceled and dates freed" });
   } catch (error) {
-    console.error("❌ Error canceling RDV:", error);
+    console.error("Error canceling RDV:", error);
     res.status(500).json({ message: "Error canceling RDV", error: error.message });
   }
 };
 
-// 📋 Get All RDVs
+// Get all RDVs
 export const getAllRDVs = async (req, res) => {
   try {
     const rdvs = await RDV.find();
@@ -226,7 +292,7 @@ export const getAllRDVs = async (req, res) => {
   }
 };
 
-// 🔍 Get RDV by ID
+// Get RDV by ID
 export const getRDVById = async (req, res) => {
   try {
     const rdv = await RDV.findById(req.params.id);
@@ -238,7 +304,7 @@ export const getRDVById = async (req, res) => {
   }
 };
 
-// 📅 Get Disabled Dates by Poste
+// Get Disabled Dates by Poste
 export const getDisabledDatesByPoste = async (req, res) => {
   try {
     const { poste } = req.params;

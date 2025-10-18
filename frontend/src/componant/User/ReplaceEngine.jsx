@@ -3,11 +3,14 @@ import axios from "axios";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { Calendar, Upload, User, FileText, Car } from "lucide-react";
+import PhoneInput from "react-phone-input-2";
+import "react-phone-input-2/lib/style.css";
 
 const ReplaceEngine = () => {
   const [formData, setFormData] = useState({
     First_Name: "",
     Last_Name: "",
+    Phone: "", // added phone here
     Matricule: "",
     Model: "",
     Motor_type: "",
@@ -22,18 +25,51 @@ const ReplaceEngine = () => {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedType, setSelectedType] = useState("");
+  const [input1, setInput1] = useState("");
+  const [input2, setInput2] = useState("");
 
+  // Handle Plate Type Selection
+  const handleSelectChange = (e) => {
+    const val = e.target.value;
+    setSelectedType(val);
+    setInput1("");
+    setInput2("");
+    setFormData((prev) => ({ ...prev, Matricule: "" }));
+  };
+
+  const updateMatricule = () => {
+    if (selectedType === "Tunis") {
+      setFormData((prev) => ({
+        ...prev,
+        Matricule: `${input1} Tunis ${input2}`,
+      }));
+    } else if (selectedType === "lybia" || selectedType === "algerie" || selectedType === "other") {
+      setFormData((prev) => ({
+        ...prev,
+        Matricule: `${selectedType} : ${input1}`,
+      }));
+    }
+  };
+
+  useEffect(() => {
+    updateMatricule();
+  }, [selectedType, input1, input2]);
+
+  // Handle Image Upload
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
     setFormData((prev) => ({ ...prev, Images: files }));
     setPreviewImages(files.map((file) => URL.createObjectURL(file)));
   };
 
+  // Handle Text Inputs
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Fetch disabled dates
   useEffect(() => {
     const fetchDisabledDates = async () => {
       if (!formData.Poste) return;
@@ -52,11 +88,24 @@ const ReplaceEngine = () => {
     fetchDisabledDates();
   }, [formData.Poste]);
 
+  // Check if date is disabled
+  const isDateDisabled = (date) => {
+    const formatted = date.toISOString().split("T")[0];
+    return disabledDates.includes(formatted);
+  };
+
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setMessage("");
     setIsSubmitting(true);
+
+    if (!formData.Phone) {
+      setError("❌ Please enter a valid phone number.");
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       const dataToSend = new FormData();
@@ -76,6 +125,7 @@ const ReplaceEngine = () => {
       setFormData({
         First_Name: "",
         Last_Name: "",
+        Phone: "",
         Matricule: "",
         Model: "",
         Motor_type: "",
@@ -85,24 +135,21 @@ const ReplaceEngine = () => {
         Images: [],
       });
       setPreviewImages([]);
+      setSelectedType("");
+      setInput1("");
+      setInput2("");
     } catch (err) {
-      console.error("❌ Error creating RDV:", err);
-      setError("❌ Failed to schedule appointment. Please try again or contact us directly.");
+      console.error(err);
+      setError("❌ Failed to schedule appointment. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const isDateDisabled = (date) => {
-    const formatted = date.toISOString().split("T")[0];
-    return disabledDates.includes(formatted);
-  };
-
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-black via-gray-900 to-red-900/10 py-12 px-4">
       <div className="max-w-2xl mx-auto">
-        
-        {/* Header Section */}
+        {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-red-500/10 rounded-2xl border border-red-500/20 mb-4">
             <Car className="w-10 h-10 text-red-500" />
@@ -115,7 +162,7 @@ const ReplaceEngine = () => {
           </p>
         </div>
 
-        {/* Form Container */}
+        {/* Form */}
         <div className="relative group">
           <div className="absolute -inset-1 bg-gradient-to-r from-red-600 to-red-800 rounded-3xl blur opacity-30 group-hover:opacity-50 transition duration-500"></div>
           <div className="relative bg-gradient-to-br from-gray-900 to-black rounded-2xl border border-gray-800 p-8 shadow-2xl">
@@ -125,7 +172,6 @@ const ReplaceEngine = () => {
                 <p className="text-red-400 text-center">{error}</p>
               </div>
             )}
-            
             {message && (
               <div className="mb-6 p-4 bg-green-500/10 border border-green-500/30 rounded-xl">
                 <p className="text-green-400 text-center">{message}</p>
@@ -133,8 +179,7 @@ const ReplaceEngine = () => {
             )}
 
             <form className="space-y-6" onSubmit={handleSubmit}>
-              
-              {/* Personal Information */}
+              {/* Name & Phone */}
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="group">
                   <label className="flex items-center text-gray-300 mb-2 text-sm font-semibold">
@@ -167,24 +212,82 @@ const ReplaceEngine = () => {
                     required
                   />
                 </div>
+
+                <div className="md:col-span-2 flex flex-col items-start">
+                  <label className="mb-2 font-bold text-gray-300">Phone Number</label>
+                  <PhoneInput
+                 country="tn"
+                  value={formData.Phone}
+                  onChange={(phone) =>
+                    setFormData((prev) => ({ ...prev, Phone: phone }))
+                  }
+                  enableSearch
+                  containerClass="w-full"
+                  inputClass="!w-full !bg-gray-800 !border !border-gray-700 !rounded-xl !py-4 !pl-14 !pr-4 !text-white"
+                  buttonClass="!bg-gray-700 !border !border-gray-600 !rounded-l-xl"
+                  dropdownClass="!bg-gray-800 !border !border-gray-700"
+                  placeholder="Enter phone number"
+                  />
+                </div>
               </div>
 
-              {/* Vehicle Information */}
+              {/* Vehicle Info */}
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="group">
                   <label className="flex items-center text-gray-300 mb-2 text-sm font-semibold">
                     <FileText className="w-4 h-4 mr-2 text-red-500" />
-                    Matricule
+                    Vehicle Plate (Matricule)
                   </label>
-                  <input
-                    type="text"
-                    name="Matricule"
-                    value={formData.Matricule}
-                    onChange={handleChange}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-xl p-4 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all duration-300"
-                    placeholder="Vehicle plate number"
+
+                  <select
+                    value={selectedType}
+                    onChange={handleSelectChange}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-xl p-4 text-white mb-3"
                     required
-                  />
+                  >
+                    <option value="">-- Select Plate Type --</option>
+                    <option value="Tunis">Tunisia</option>
+                    <option value="lybia">Libya</option>
+                    <option value="algerie">Algeria</option>
+                    <option value="other">Other</option>
+                  </select>
+
+                  {selectedType === "Tunis" && (
+                    <div className="flex items-center gap-3 mt-2 p-4 bg-gray-800/50 rounded-xl border border-gray-700">
+                      <input
+                        type="text"
+                        placeholder="123"
+                        value={input1}
+                        onChange={(e) => setInput1(e.target.value)}
+                        className="bg-gray-700 border border-gray-600 rounded-lg p-3 w-1/3 text-white text-center font-bold"
+                        maxLength="3"
+                      />
+                      <span className="font-bold text-red-500 text-lg">تونس</span>
+                      <input
+                        type="text"
+                        placeholder="456"
+                        value={input2}
+                        onChange={(e) => setInput2(e.target.value)}
+                        className="bg-gray-700 border border-gray-600 rounded-lg p-3 w-1/3 text-white text-center font-bold"
+                        maxLength="3"
+                      />
+                    </div>
+                  )}
+
+                  {(selectedType === "lybia" || selectedType === "algerie" || selectedType === "other") && (
+                    <div className="mt-2 p-4 bg-gray-800/50 rounded-xl border border-gray-700">
+                      <input
+                        type="text"
+                        placeholder="Enter plate number"
+                        value={input1}
+                        onChange={(e) => setInput1(e.target.value)}
+                        className="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white"
+                      />
+                      <p className="mt-3 text-gray-400 text-sm">
+                        Plate Number: <b className="text-red-400">{selectedType && input1 ? `${selectedType} : ${input1}` : "Not set"}</b>
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="group">
@@ -197,14 +300,14 @@ const ReplaceEngine = () => {
                     name="Model"
                     value={formData.Model}
                     onChange={handleChange}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-xl p-4 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all duration-300"
+                    className="w-full bg-gray-800 border border-gray-700 rounded-xl p-4 text-white placeholder-gray-400"
                     placeholder="e.g., BMW X5, Toyota Camry"
                     required
                   />
                 </div>
               </div>
 
-              {/* Engine Type */}
+              {/* Motor Type */}
               <div className="group">
                 <label className="flex items-center text-gray-300 mb-2 text-sm font-semibold">
                   <Car className="w-4 h-4 mr-2 text-red-500" />
@@ -214,14 +317,14 @@ const ReplaceEngine = () => {
                   name="Motor_type"
                   value={formData.Motor_type}
                   onChange={handleChange}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-xl p-4 text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all duration-300 appearance-none"
+                  className="w-full bg-gray-800 border border-gray-700 rounded-xl p-4 text-white"
                   required
                 >
-                  <option value="" className="bg-gray-800">Select Motor Type</option>
-                  <option value="Diesel" className="bg-gray-800">Diesel</option>
-                  <option value="Essence" className="bg-gray-800">Essence</option>
-                  <option value="Electric" className="bg-gray-800">Electric</option>
-                  <option value="Hybrid" className="bg-gray-800">Hybrid</option>
+                  <option value="">Select Motor Type</option>
+                  <option value="Diesel">Diesel</option>
+                  <option value="Essence">Essence</option>
+                  <option value="Electric">Electric</option>
+                  <option value="Hybrid">Hybrid</option>
                 </select>
               </div>
 
@@ -245,7 +348,7 @@ const ReplaceEngine = () => {
                   dateFormat="MMMM d, yyyy"
                   filterDate={(date) => !isDateDisabled(date)}
                   minDate={new Date()}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-xl p-4 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all duration-300"
+                  className="w-full bg-gray-800 border border-gray-700 rounded-xl p-4 text-white"
                   required
                 />
               </div>
@@ -256,7 +359,7 @@ const ReplaceEngine = () => {
                   <Upload className="w-4 h-4 mr-2 text-red-500" />
                   Upload Images (Optional)
                 </label>
-                <div className="border-2 border-dashed border-gray-700 rounded-xl p-6 text-center hover:border-red-500/50 transition-colors duration-300">
+                <div className="border-2 border-dashed border-gray-700 rounded-xl p-6 text-center hover:border-red-500/50">
                   <input
                     type="file"
                     name="Images"
@@ -282,7 +385,7 @@ const ReplaceEngine = () => {
                       <img
                         src={src}
                         alt="preview"
-                        className="w-full h-24 object-cover rounded-lg border border-gray-700 group-hover:border-red-500 transition-colors duration-300"
+                        className="w-full h-24 object-cover rounded-lg border border-gray-700"
                       />
                     </div>
                   ))}
@@ -293,7 +396,7 @@ const ReplaceEngine = () => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold py-4 rounded-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-2xl shadow-red-500/25 flex items-center justify-center gap-2"
+                className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-bold py-4 rounded-xl shadow-2xl flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
                   <>

@@ -4,6 +4,7 @@ const RDVSchema = new mongoose.Schema(
   {
     First_Name: { type: String, required: true },
     Last_Name: { type: String, required: true },
+    phone: { type: String, required: true },
     Matricule: { type: String, required: true },
     Model: { type: String, required: true },
     Motor_type: { type: String, required: true },

@@ -1,11 +1,14 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { AlertTriangle, Send, User, Mail, MessageCircle, Shield } from "lucide-react";
+import PhoneInput from "react-phone-input-2";
+import 'react-phone-input-2/lib/style.css';
 
 const Reclamation = () => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    phone: "",
     description: "",
   });
 
@@ -13,16 +16,29 @@ const Reclamation = () => {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
+  // Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Handle phone change
+  const handlePhoneChange = (phone) => {
+    setFormData((prev) => ({ ...prev, phone }));
+  };
+
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError("");
     setMessage("");
+
+    if (!formData.phone) {
+      setError("❌ Please enter a valid phone number.");
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       // Example API call — replace with your real endpoint
@@ -30,7 +46,7 @@ const Reclamation = () => {
 
       console.log("Réclamation submitted:", formData);
       setMessage("✅ Your complaint has been submitted successfully! We'll contact you within 24 hours.");
-      setFormData({ name: "", email: "", description: "" });
+      setFormData({ name: "", email: "", phone: "", description: "" });
     } catch (error) {
       console.error("Erreur lors de l'envoi de la réclamation :", error);
       setError("❌ An error occurred. Please try again or contact us directly.");
@@ -107,6 +123,29 @@ const Reclamation = () => {
                   className="w-full bg-gray-800 border border-gray-700 rounded-xl p-4 text-white placeholder-gray-400 focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all duration-300"
                   placeholder="your.email@example.com"
                 />
+              </div>
+
+              {/* Phone Field */}
+              <div className="flex flex-col items-start">
+                <label className="mb-2 font-bold text-gray-300 flex items-center gap-2">
+                  <User className="w-4 h-4 text-red-500"/> Phone Number
+                </label>
+                <PhoneInput
+                  country="tn"
+                  value={formData.Phone}
+                  onChange={(phone) =>
+                    setFormData((prev) => ({ ...prev, Phone: phone }))
+                  }
+                  enableSearch
+                  containerClass="w-full"
+                  inputClass="!w-full !bg-gray-800 !border !border-gray-700 !rounded-xl !py-4 !pl-14 !pr-4 !text-white"
+                  buttonClass="!bg-gray-700 !border !border-gray-600 !rounded-l-xl"
+                  dropdownClass="!bg-gray-800 !border !border-gray-700"
+                  placeholder="Enter phone number"
+                />
+                {formData.phone && (
+                  <p className="mt-2 text-gray-400 text-sm">You entered: {formData.phone}</p>
+                )}
               </div>
 
               {/* Description Field */}

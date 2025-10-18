@@ -8,6 +8,7 @@ import rdvRoutes from "./Routes/RDVRoute.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import authRoute from "./Routes/authRoute.js";
+import reclamationRoute from "./Routes/ReclamationRoute.js";
 dotenv.config();
 
 const app = express();
@@ -36,7 +37,7 @@ mongoose.connect(process.env.MONGO_URI, {
 .catch((err) => console.error("MongoDB Connection Error:", err));
 
 app.use("/api/rdv", rdvRoutes);
-
+app.use("/api/reclamations", reclamationRoute);
 app.get("/", (req, res) => {
   res.send("RDV API is running successfully!");
 });

@@ -3,19 +3,21 @@ import axios from "axios";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { Gauge, Calendar, Upload, User, FileText, Car, Wrench, Zap } from "lucide-react";
-
+import PhoneInput from "react-phone-input-2";
+import 'react-phone-input-2/lib/style.css';
 const Diagnostics = () => {
-  const [formData, setFormData] = useState({
-    First_Name: "",
-    Last_Name: "",
-    Matricule: "",
-    Model: "",
-    Motor_type: "",
-    Type: false,
-    Date_RDV: "",
-    Poste: "Diagnostics",
-    Images: [],
-  });
+   const [formData, setFormData] = useState({
+     First_Name: "",
+     Last_Name: "",
+     Phone: "", // added phone here
+     Matricule: "",
+     Model: "",
+     Motor_type: "",
+     Type: false,
+     Date_RDV: "",
+     Poste: "Engine replacement",
+     Images: [],
+   });
 
   const [previewImages, setPreviewImages] = useState([]);
   const [disabledDates, setDisabledDates] = useState([]);
@@ -204,88 +206,83 @@ const Diagnostics = () => {
                     required
                   />
                 </div>
+                 <div className="md:col-span-2 flex flex-col items-start">
+                                   <label className="mb-2 font-bold text-gray-300">Phone Number</label>
+                                   <PhoneInput
+                                    country="tn"
+                  value={formData.Phone}
+                  onChange={(phone) =>
+                    setFormData((prev) => ({ ...prev, Phone: phone }))
+                  }
+                  enableSearch
+                  containerClass="w-full"
+                  inputClass="!w-full !bg-gray-800 !border !border-gray-700 !rounded-xl !py-4 !pl-14 !pr-4 !text-white"
+                  buttonClass="!bg-gray-700 !border !border-gray-600 !rounded-l-xl"
+                  dropdownClass="!bg-gray-800 !border !border-gray-700"
+                  placeholder="Enter phone number"
+                                   />
+                                 </div>
               </div>
 
               {/* Dynamic Matricule Section */}
               <div className="group">
-                <label className="flex items-center text-gray-300 mb-2 text-sm font-semibold">
-                  <FileText className="w-4 h-4 mr-2 text-red-500" />
-                  Vehicle Plate (Matricule)
-                </label>
-                
-                <select
-                  value={selectedType}
-                  onChange={handleSelectChange}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-xl p-4 text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all duration-300 mb-3"
-                  required
-                >
-                  <option value="" className="bg-gray-800">-- Select Plate Type --</option>
-                  <option value="Tunis" className="bg-gray-800">Tunisia</option>
-                  <option value="lybia" className="bg-gray-800">Libya</option>
-                  <option value="algerie" className="bg-gray-800">Algeria</option>
-                  <option value="o" className="bg-gray-800">Other</option>
-                </select>
-
-                {/* Tunis style: two parts */}
-                {selectedType === "Tunis" && (
-                  <div className="flex items-center gap-3 mt-2 p-4 bg-gray-800/50 rounded-xl border border-gray-700">
-                    <input
-                      type="text"
-                      placeholder="123"
-                      value={input1}
-                      onChange={(e) => setInput1(e.target.value)}
-                      className="bg-gray-700 border border-gray-600 rounded-lg p-3 w-1/3 text-white text-center font-bold"
-                      maxLength="3"
-                    />
-                    <span className="font-bold text-red-500 text-lg">تونس</span>
-                    <input
-                      type="text"
-                      placeholder="456"
-                      value={input2}
-                      onChange={(e) => setInput2(e.target.value)}
-                      className="bg-gray-700 border border-gray-600 rounded-lg p-3 w-1/3 text-white text-center font-bold"
-                      maxLength="3"
-                    />
-                  </div>
-                )}
-
-                {/* Libya & Algeria style */}
-                {(selectedType === "lybia" || selectedType === "algerie") && (
-                  <div className="flex items-center gap-3 mt-2 p-4 bg-gray-800/50 rounded-xl border border-gray-700">
-                    <input
-                      type="text"
-                      placeholder="Left part"
-                      value={input1}
-                      onChange={(e) => setInput1(e.target.value)}
-                      className="bg-gray-700 border border-gray-600 rounded-lg p-3 flex-1 text-white text-center"
-                    />
-                    <span className="font-bold text-red-500">{selectedType}</span>
-                    <input
-                      type="text"
-                      placeholder="Right part"
-                      value={input2}
-                      onChange={(e) => setInput2(e.target.value)}
-                      className="bg-gray-700 border border-gray-600 rounded-lg p-3 flex-1 text-white text-center"
-                    />
-                  </div>
-                )}
-
-                {/* Other countries */}
-                {selectedType === "o" && (
-                  <div className="mt-2 p-4 bg-gray-800/50 rounded-xl border border-gray-700">
-                    <input
-                      type="text"
-                      placeholder="Enter plate number"
-                      value={input1}
-                      onChange={(e) => setInput1(e.target.value)}
-                      className="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white"
-                    />
-                    <p className="mt-3 text-gray-400 text-sm">
-                      Plate Number: <b className="text-red-400">{selectedType && input1 ? `${selectedType} : ${input1}` : "Not set"}</b>
-                    </p>
-                  </div>
-                )}
-              </div>
+                 <label className="flex items-center text-gray-300 mb-2 text-sm font-semibold">
+                                                <FileText className="w-4 h-4 mr-2 text-red-500" />
+                                                Vehicle Plate (Matricule)
+                                              </label>
+                                              
+                                              <select
+                                                value={selectedType}
+                                                onChange={handleSelectChange}
+                                                className="w-full bg-gray-800 border border-gray-700 rounded-xl p-4 text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all duration-300 mb-3"
+                                                required
+                                              >
+                                                <option value="" className="bg-gray-800">-- Select Plate Type --</option>
+                                                <option value="Tunis" className="bg-gray-800">Tunisia</option>
+                                                <option value="lybia" className="bg-gray-800">Libya</option>
+                                                <option value="algerie" className="bg-gray-800">Algeria</option>
+                                                <option value="o" className="bg-gray-800">Other</option>
+                                              </select>
+                              
+                                              {/* Tunis style: two parts */}
+                                              {selectedType === "Tunis" && (
+                                                <div className="flex items-center gap-3 mt-2 p-4 bg-gray-800/50 rounded-xl border border-gray-700">
+                                                  <input
+                                                    type="text"
+                                                    placeholder="123"
+                                                    value={input1}
+                                                    onChange={(e) => setInput1(e.target.value)}
+                                                    className="bg-gray-700 border border-gray-600 rounded-lg p-3 w-1/3 text-white text-center font-bold"
+                                                    maxLength="3"
+                                                  />
+                                                  <span className="font-bold text-red-500 text-lg">تونس</span>
+                                                  <input
+                                                    type="text"
+                                                    placeholder="456"
+                                                    value={input2}
+                                                    onChange={(e) => setInput2(e.target.value)}
+                                                    className="bg-gray-700 border border-gray-600 rounded-lg p-3 w-1/3 text-white text-center font-bold"
+                                                    maxLength="3"
+                                                  />
+                                                </div>
+                                              )}
+                              
+                                              {/* Other countries */}
+                                              {(selectedType === "lybia" || selectedType === "algerie" || selectedType === "other") && (
+                                                <div className="mt-2 p-4 bg-gray-800/50 rounded-xl border border-gray-700">
+                                                  <input
+                                                    type="text"
+                                                    placeholder="Enter plate number"
+                                                    value={input1}
+                                                    onChange={(e) => setInput1(e.target.value)}
+                                                    className="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white"
+                                                  />
+                                                  <p className="mt-3 text-gray-400 text-sm">
+                                                    Plate Number: <b className="text-red-400">{selectedType && input1 ? `${selectedType} : ${input1}` : "Not set"}</b>
+                                                  </p>
+                                                </div>
+                                              )}
+                                            </div>
 
               {/* Vehicle Information */}
               <div className="grid md:grid-cols-2 gap-4">
