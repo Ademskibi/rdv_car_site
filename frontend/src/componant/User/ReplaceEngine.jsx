@@ -10,7 +10,7 @@ const ReplaceEngine = () => {
   const [formData, setFormData] = useState({
     First_Name: "",
     Last_Name: "",
-    Phone: "", // added phone here
+    Phone: "",
     Matricule: "",
     Model: "",
     Motor_type: "",
@@ -29,7 +29,7 @@ const ReplaceEngine = () => {
   const [input1, setInput1] = useState("");
   const [input2, setInput2] = useState("");
 
-  // Handle Plate Type Selection
+  // Plate Type Selection
   const handleSelectChange = (e) => {
     const val = e.target.value;
     setSelectedType(val);
@@ -44,7 +44,11 @@ const ReplaceEngine = () => {
         ...prev,
         Matricule: `${input1} Tunis ${input2}`,
       }));
-    } else if (selectedType === "lybia" || selectedType === "algerie" || selectedType === "other") {
+    } else if (
+      selectedType === "lybia" ||
+      selectedType === "algerie" ||
+      selectedType === "other"
+    ) {
       setFormData((prev) => ({
         ...prev,
         Matricule: `${selectedType} : ${input1}`,
@@ -56,14 +60,14 @@ const ReplaceEngine = () => {
     updateMatricule();
   }, [selectedType, input1, input2]);
 
-  // Handle Image Upload
+  // Image Upload
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
     setFormData((prev) => ({ ...prev, Images: files }));
     setPreviewImages(files.map((file) => URL.createObjectURL(file)));
   };
 
-  // Handle Text Inputs
+  // Text Inputs
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -75,10 +79,12 @@ const ReplaceEngine = () => {
       if (!formData.Poste) return;
       try {
         const res = await axios.get(
-          `http://localhost:5000/api/rdv/disabled-dates/${encodeURIComponent(formData.Poste)}`
+          `http://localhost:5000/api/rdv/disabled-dates/${encodeURIComponent(
+            formData.Poste
+          )}`
         );
-        const formatted = res.data.map((date) =>
-          new Date(date).toISOString().split("T")[0]
+        const formatted = res.data.map(
+          (date) => new Date(date).toISOString().split("T")[0]
         );
         setDisabledDates(formatted);
       } catch (err) {
@@ -88,13 +94,12 @@ const ReplaceEngine = () => {
     fetchDisabledDates();
   }, [formData.Poste]);
 
-  // Check if date is disabled
   const isDateDisabled = (date) => {
     const formatted = date.toISOString().split("T")[0];
     return disabledDates.includes(formatted);
   };
 
-  // Handle form submission
+  // Handle Submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -109,19 +114,28 @@ const ReplaceEngine = () => {
 
     try {
       const dataToSend = new FormData();
-      Object.entries(formData).forEach(([key, value]) => {
-        if (key === "Images") {
-          value.forEach((file) => dataToSend.append("Images", file));
-        } else {
-          dataToSend.append(key, value);
+      dataToSend.append("First_Name", formData.First_Name);
+      dataToSend.append("Last_Name", formData.Last_Name);
+      dataToSend.append("phone", formData.Phone);
+      dataToSend.append("Matricule", formData.Matricule);
+      dataToSend.append("Model", formData.Model);
+      dataToSend.append("Motor_type", formData.Motor_type);
+      dataToSend.append("Type", formData.Type);
+      dataToSend.append("Date_RDV", new Date(formData.Date_RDV).toISOString());
+      dataToSend.append("Poste", formData.Poste);
+      formData.Images.forEach((file) => dataToSend.append("Images", file));
+
+      await axios.post(
+        "http://localhost:5000/api/rdv/replace_engine",
+        dataToSend,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
         }
-      });
+      );
 
-      await axios.post("http://localhost:5000/api/rdv/ER", dataToSend, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      setMessage("✅ Engine replacement scheduled successfully! We'll contact you soon.");
+      setMessage(
+        "✅ Engine replacement scheduled successfully! We'll contact you soon."
+      );
       setFormData({
         First_Name: "",
         Last_Name: "",
@@ -140,7 +154,9 @@ const ReplaceEngine = () => {
       setInput2("");
     } catch (err) {
       console.error(err);
-      setError("❌ Failed to schedule appointment. Please try again.");
+      setError(
+        "❌ Failed to schedule appointment. Please check your data and try again."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -149,7 +165,6 @@ const ReplaceEngine = () => {
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-black via-gray-900 to-red-900/10 py-12 px-4">
       <div className="max-w-2xl mx-auto">
-        {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-red-500/10 rounded-2xl border border-red-500/20 mb-4">
             <Car className="w-10 h-10 text-red-500" />
@@ -158,15 +173,14 @@ const ReplaceEngine = () => {
             ENGINE <span className="text-red-500">REPLACEMENT</span>
           </h1>
           <p className="text-gray-300 text-lg max-w-md mx-auto">
-            Premium engine replacement service with warranty and expert craftsmanship
+            Premium engine replacement service with warranty and expert
+            craftsmanship
           </p>
         </div>
 
-        {/* Form */}
         <div className="relative group">
           <div className="absolute -inset-1 bg-gradient-to-r from-red-600 to-red-800 rounded-3xl blur opacity-30 group-hover:opacity-50 transition duration-500"></div>
           <div className="relative bg-gradient-to-br from-gray-900 to-black rounded-2xl border border-gray-800 p-8 shadow-2xl">
-            
             {error && (
               <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
                 <p className="text-red-400 text-center">{error}</p>
@@ -214,19 +228,21 @@ const ReplaceEngine = () => {
                 </div>
 
                 <div className="md:col-span-2 flex flex-col items-start">
-                  <label className="mb-2 font-bold text-gray-300">Phone Number</label>
+                  <label className="mb-2 font-bold text-gray-300">
+                    Phone Number
+                  </label>
                   <PhoneInput
-                 country="tn"
-                  value={formData.Phone}
-                  onChange={(phone) =>
-                    setFormData((prev) => ({ ...prev, Phone: phone }))
-                  }
-                  enableSearch
-                  containerClass="w-full"
-                  inputClass="!w-full !bg-gray-800 !border !border-gray-700 !rounded-xl !py-4 !pl-14 !pr-4 !text-white"
-                  buttonClass="!bg-gray-700 !border !border-gray-600 !rounded-l-xl"
-                  dropdownClass="!bg-gray-800 !border !border-gray-700"
-                  placeholder="Enter phone number"
+                    country="tn"
+                    value={formData.Phone}
+                    onChange={(phone) =>
+                      setFormData((prev) => ({ ...prev, Phone: phone }))
+                    }
+                    enableSearch
+                    containerClass="w-full"
+                    inputClass="!w-full !bg-gray-800 !border !border-gray-700 !rounded-xl !py-4 !pl-14 !pr-4 !text-white"
+                    buttonClass="!bg-gray-700 !border !border-gray-600 !rounded-l-xl"
+                    dropdownClass="!bg-gray-800 !border !border-gray-700"
+                    placeholder="Enter phone number"
                   />
                 </div>
               </div>
@@ -269,12 +285,14 @@ const ReplaceEngine = () => {
                         value={input2}
                         onChange={(e) => setInput2(e.target.value)}
                         className="bg-gray-700 border border-gray-600 rounded-lg p-3 w-1/3 text-white text-center font-bold"
-                        maxLength="3"
+                        maxLength="4"
                       />
                     </div>
                   )}
 
-                  {(selectedType === "lybia" || selectedType === "algerie" || selectedType === "other") && (
+                  {(selectedType === "lybia" ||
+                    selectedType === "algerie" ||
+                    selectedType === "other") && (
                     <div className="mt-2 p-4 bg-gray-800/50 rounded-xl border border-gray-700">
                       <input
                         type="text"
@@ -284,7 +302,12 @@ const ReplaceEngine = () => {
                         className="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white"
                       />
                       <p className="mt-3 text-gray-400 text-sm">
-                        Plate Number: <b className="text-red-400">{selectedType && input1 ? `${selectedType} : ${input1}` : "Not set"}</b>
+                        Plate Number:{" "}
+                        <b className="text-red-400">
+                          {selectedType && input1
+                            ? `${selectedType} : ${input1}`
+                            : "Not set"}
+                        </b>
                       </p>
                     </div>
                   )}
@@ -335,14 +358,21 @@ const ReplaceEngine = () => {
                   Appointment Date
                 </label>
                 <DatePicker
-                  selected={formData.Date_RDV ? new Date(formData.Date_RDV) : null}
+                  selected={
+                    formData.Date_RDV ? new Date(formData.Date_RDV) : null
+                  }
                   onChange={(date) => {
                     const formatted = date.toISOString().split("T")[0];
                     if (disabledDates.includes(formatted)) {
-                      alert("❌ This date is already booked for engine replacement service.");
+                      alert(
+                        "❌ This date is already booked for engine replacement service."
+                      );
                       return;
                     }
-                    setFormData((prev) => ({ ...prev, Date_RDV: formatted }));
+                    setFormData((prev) => ({
+                      ...prev,
+                      Date_RDV: formatted,
+                    }));
                   }}
                   placeholderText="Select appointment date"
                   dateFormat="MMMM d, yyyy"
@@ -371,8 +401,12 @@ const ReplaceEngine = () => {
                   />
                   <label htmlFor="engine-images" className="cursor-pointer">
                     <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-gray-400 text-sm">Click to upload vehicle photos</p>
-                    <p className="text-gray-500 text-xs mt-1">Supports JPG, PNG, WEBP</p>
+                    <p className="text-gray-400 text-sm">
+                      Click to upload vehicle photos
+                    </p>
+                    <p className="text-gray-500 text-xs mt-1">
+                      Supports JPG, PNG, WEBP
+                    </p>
                   </label>
                 </div>
               </div>
@@ -411,7 +445,6 @@ const ReplaceEngine = () => {
                 )}
               </button>
 
-              {/* Additional Info */}
               <div className="text-center">
                 <p className="text-gray-400 text-sm">
                   🛡️ All engine replacements include 2-year warranty

@@ -14,15 +14,17 @@ import {
 } from "lucide-react";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
+import { setHours, setMinutes } from "date-fns";
 
 const FastService = () => {
   const [formData, setFormData] = useState({
     First_Name: "",
     Last_Name: "",
-    Phone: "",
+    phone: "",
     Matricule: "",
     Model: "",
     Motor_type: "",
+    Type: false,
     description: "",
     Date_RDV: "",
     Poste: "Fast service",
@@ -75,7 +77,7 @@ const FastService = () => {
     const fetchDisabledDates = async () => {
       try {
         const res = await axios.get(
-          `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/rdv/disabled-dates/${encodeURIComponent(formData.Poste)}`
+          `http://localhost:5000/api/rdv/disabled-dates/${encodeURIComponent(formData.Poste)}`
         );
         const formatted = res.data.map((date) =>
           new Date(date).toISOString().split("T")[0]
@@ -99,61 +101,69 @@ const FastService = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    setMessage("");
-    setIsSubmitting(true);
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError("");
+  setMessage("");
+  setIsSubmitting(true);
 
-    try {
-      const dataToSend = new FormData();
-      Object.entries(formData).forEach(([key, value]) => {
-        if (key === "Images" && Array.isArray(value)) {
-          value.forEach((file) => dataToSend.append("Images", file));
-        } else {
+  try {
+    const dataToSend = new FormData();
+
+    Object.entries(formData).forEach(([key, value]) => {
+      if (key === "Images") {
+        // Append each image file
+        value.forEach((file) => dataToSend.append("Images", file));
+      } else if (value !== undefined && value !== null) {
+        // Convert boolean to string for FormData
+        if (typeof value === "boolean") {
+          dataToSend.append(key, value.toString());
+        } 
+        // Convert date to ISO string if it's a Date object
+        else if (value instanceof Date) {
+          dataToSend.append(key, value.toISOString());
+        } 
+        else {
           dataToSend.append(key, value);
         }
-      });
+      }
+    });
 
-      await axios.post(
-        `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/rdv`,
-        dataToSend,
-        { headers: { "Content-Type": "multipart/form-data" } }
-      );
+    const res = await axios.post("http://localhost:5000/api/rdv", dataToSend, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
 
-      setMessage(
-        "✅ Fast service appointment scheduled successfully! We'll contact you to confirm."
-      );
-
-      setFormData({
-        First_Name: "",
-        Last_Name: "",
-        Phone: "",
-        Matricule: "",
-        Model: "",
-        Motor_type: "",
-        description: "",
-        Date_RDV: "",
-        Poste: "Fast service",
-        Images: [],
-      });
-      setPreviewImages([]);
-      setSelectedType("");
-      setInput1("");
-      setInput2("");
-    } catch (err) {
-      console.error("Error creating RDV:", err);
-      setError("❌ Failed to schedule appointment. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
+    setMessage(
+      "✅ Fast service appointment scheduled successfully! We'll contact you to confirm."
+    );
+    setFormData({
+      First_Name: "",
+      Last_Name: "",
+      phone: "",
+      Matricule: "",
+      Model: "",
+      Motor_type: "",
+      Type: false,
+      description: "",
+      Date_RDV: "",
+      Poste: "Fast service",
+      Images: [],
+    });
+    setPreviewImages([]);
+    setSelectedType("");
+    setInput1("");
+    setInput2("");
+  } catch (err) {
+    console.error("Error creating RDV:", err);
+    setError("❌ Failed to schedule appointment. Please try again.");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
   const isDateDisabled = (date) => {
     const formatted = date.toISOString().split("T")[0];
     return disabledDates.includes(formatted);
   };
-
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-black via-gray-900 to-red-900/10 py-12 px-4">
       <div className="max-w-2xl mx-auto">
@@ -222,25 +232,20 @@ const FastService = () => {
               </div>
 
               {/* Phone Number */}
-              <div className="group">
-                <label className="flex items-center text-gray-300 mb-2 text-sm font-semibold">
-                  <User className="w-4 h-4 mr-2 text-red-500" />
-                  Phone Number
-                </label>
-                <PhoneInput
-                  country="tn"
-                  value={formData.Phone}
-                  onChange={(phone) =>
-                    setFormData((prev) => ({ ...prev, Phone: phone }))
-                  }
-                  enableSearch
-                  containerClass="w-full"
-                  inputClass="!w-full !bg-gray-800 !border !border-gray-700 !rounded-xl !py-4 !pl-14 !pr-4 !text-white"
-                  buttonClass="!bg-gray-700 !border !border-gray-600 !rounded-l-xl"
-                  dropdownClass="!bg-gray-800 !border !border-gray-700"
-                  placeholder="Enter phone number"
-                />
-              </div>
+                <div className="md:col-span-2 flex flex-col items-start">
+                  <label className="mb-2 font-bold text-gray-300">Phone Number</label>
+                  <PhoneInput
+                    country="tn"
+                    value={formData.phone}
+                    onChange={(phone) => setFormData((prev) => ({ ...prev, phone }))}
+                    enableSearch
+                    containerClass="w-full"
+                    inputClass="!w-full !bg-gray-800 !border !border-gray-700 !rounded-xl !py-4 !pl-14 !pr-4 !text-white"
+                    buttonClass="!bg-gray-700 !border !border-gray-600 !rounded-l-xl"
+                    dropdownClass="!bg-gray-800 !border !border-gray-700"
+                    placeholder="Enter phone number"
+                  />
+                </div>
 
               {/* Vehicle Plate Section */}
               <div className="group">
@@ -279,7 +284,7 @@ const FastService = () => {
                       value={input2}
                       onChange={(e) => setInput2(e.target.value)}
                       className="bg-gray-700 border border-gray-600 rounded-lg p-3 w-1/3 text-white text-center font-bold"
-                      maxLength="3"
+                      maxLength="4"
                     />
                   </div>
                 )}
@@ -356,31 +361,37 @@ const FastService = () => {
               </div>
 
               {/* Date Picker */}
-              <div className="group">
-                <label className="flex items-center text-gray-300 mb-2 text-sm font-semibold">
-                  <Calendar className="w-4 h-4 mr-2 text-red-500" />
-                  Service Date
-                </label>
-                <DatePicker
-                  selected={
-                    formData.Date_RDV ? new Date(formData.Date_RDV) : null
-                  }
-                  onChange={(date) => {
-                    const formatted = date.toISOString().split("T")[0];
-                    if (disabledDates.includes(formatted)) {
-                      alert("❌ This date is already booked.");
-                      return;
-                    }
-                    setFormData((prev) => ({ ...prev, Date_RDV: formatted }));
-                  }}
-                  minDate={new Date()}
-                  placeholderText="Select service date"
-                  filterDate={(date) => !isDateDisabled(date)}
-                  dateFormat="MMMM d, yyyy"
-                  required
-                  className="w-full bg-gray-800 border border-gray-700 rounded-xl p-4 text-white"
-                />
-              </div>
+             <div className="group">
+  <label className="flex items-center text-gray-300 mb-2 text-sm font-semibold">
+    <Calendar className="w-4 h-4 mr-2 text-red-500" />
+    Service Date & Time
+  </label>
+
+  <DatePicker
+    selected={formData.Date_RDV ? new Date(formData.Date_RDV) : null}
+    onChange={(date) => {
+      if (!date) return;
+      const formatted = date.toISOString().split("T")[0];
+      if (disabledDates.includes(formatted)) {
+        alert("❌ This date is already booked.");
+        return;
+      }
+      setFormData((prev) => ({ ...prev, Date_RDV: date.toISOString() }));
+    }}
+    minDate={new Date()}
+    placeholderText="Select service date and time"
+    filterDate={(date) => !isDateDisabled(date)}
+    showTimeSelect
+    timeFormat="HH:mm"
+    timeIntervals={30} // each 30 mins
+    dateFormat="MMMM d, yyyy h:mm aa"
+     minTime={setHours(setMinutes(new Date(), 0), 9)}   // Earliest = 9:00 AM
+     maxTime={setHours(setMinutes(new Date(), 0), 17)}
+    required
+    className="w-full bg-gray-800 border border-gray-700 rounded-xl p-4 text-white"
+  />
+</div>
+
 
               {/* Image Upload */}
               <div className="group">

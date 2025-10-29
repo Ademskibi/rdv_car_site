@@ -1,7 +1,7 @@
 import express from "express";
 import {
   createRDV,
-  createRDVFS,
+  createRDV_RE,
   confirmRDV,
   cancelRDV,
   getAllRDVs,
@@ -11,7 +11,7 @@ import {
 import photoUpload from "../cloudinary/photoUpload.js";
 
 const router = express.Router();
-router.post("/ER", photoUpload.array("Images", 5), createRDVFS);
+router.post("/replace_engine", photoUpload.array("Images", 5), createRDV_RE);
 router.post("/", photoUpload.array("Images", 5), createRDV);
 router.put("/confirm/:id", confirmRDV);
 router.put("/cancel/:id", cancelRDV);

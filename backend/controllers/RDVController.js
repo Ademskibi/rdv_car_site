@@ -85,20 +85,10 @@ export const createRDV = async (req, res) => {
       Motor_type,
       Date_RDV,
       Poste,
-      description,
     } = req.body;
 
     // Validation
-    if (
-      !First_Name ||
-      !Last_Name ||
-      !phone ||
-      !Matricule ||
-      !Model ||
-      !Motor_type ||
-      !Date_RDV ||
-      !Poste
-    )
+    if (!First_Name || !Last_Name || !phone || !Matricule || !Model || !Motor_type || !Date_RDV || !Poste)
       return res.status(400).json({ message: "Missing required fields" });
 
     if (!validator.isMobilePhone(phone, "any"))
@@ -108,19 +98,15 @@ export const createRDV = async (req, res) => {
       return res.status(400).json({ message: "Cannot book a past date" });
 
     if (Poste === "Fast service") {
-      const existing = await RDV.findOne({
-        Poste: "Fast service",
-        Date_RDV,
-        Type: true,
-      });
+      const existing = await RDV.findOne({ Poste, Date_RDV, Type: true });
       if (existing)
-        return res
-          .status(400)
-          .json({ message: "This date is already booked for Fast service" });
+        return res.status(400).json({ message: "This date is already booked for Fast service" });
     }
 
-    const DisabledDates = new Date(Date_RDV);
-    const uploadedUrls = await uploadFiles(req.files);
+    let uploadedUrls = [];
+    if (req.files && req.files.length > 0) {
+      uploadedUrls = await uploadFiles(req.files);
+    }
 
     const newRDV = new RDV({
       First_Name,
@@ -132,21 +118,24 @@ export const createRDV = async (req, res) => {
       Date_RDV,
       Poste,
       Images: uploadedUrls,
-      DisabledDates,
       Type: false,
-      description,
     });
 
     const savedRDV = await newRDV.save();
     res.status(201).json(savedRDV);
+  console.log("req.body:", req.body);
+console.log("req.files:", req.files);
   } catch (error) {
     console.error("Error creating RDV:", error);
     res.status(500).json({ message: "Error creating RDV", error: error.message });
   }
+  console.log("req.body:", req.body);
+console.log("req.files:", req.files);
 };
 
-// Create Fast Service RDV (blocks 3 consecutive days)
-export const createRDVFS = async (req, res) => {
+
+// Create replace engine RDV (blocks 3 consecutive days)
+export const createRDV_RE = async (req, res) => {
   try {
     const {
       First_Name,
@@ -157,7 +146,7 @@ export const createRDVFS = async (req, res) => {
       Motor_type,
       Date_RDV,
       Poste,
-      description,
+   
     } = req.body;
 
     // Validation
@@ -213,7 +202,7 @@ export const createRDVFS = async (req, res) => {
       Images: uploadedUrls,
       DisabledDates,
       Type: false,
-      description,
+      
     });
 
     const savedRDV = await newRDV.save();
