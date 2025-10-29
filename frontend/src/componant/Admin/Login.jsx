@@ -35,7 +35,7 @@ const Login = () => {
 
       const token = data.token;
       localStorage.setItem("token", token);
-
+      localStorage.setItem("user", JSON.stringify(data.user));
       const decoded = jwtDecode(token);
       console.log("✅ Logged in user:", decoded);
 

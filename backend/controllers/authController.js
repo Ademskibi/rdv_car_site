@@ -8,7 +8,7 @@ dotenv.config();
 // ✅ Register new user
 export const register = async (req, res) => {
   try {
-    const { UserName, Email, Password } = req.body;
+    const { UserName, Email, Password, role } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ Email });
@@ -24,6 +24,7 @@ export const register = async (req, res) => {
       UserName,
       Email,
       Password: hashedPassword,
+      Role: role || "user", // default role if not provided
     });
 
     await newUser.save();
@@ -52,9 +53,13 @@ export const login = async (req, res) => {
 
     // Generate JWT token
     const token = jwt.sign(
-      { id: user._id, email: user.Email },
+      {
+        id: user._id,
+        email: user.Email,
+        role: user.Role, // ✅ include role in token
+      },
       process.env.JWT_SECRET,
-      { expiresIn: "1d" } // token valid for 1 day
+      { expiresIn: "1d" }
     );
 
     res.status(200).json({
@@ -64,6 +69,7 @@ export const login = async (req, res) => {
         id: user._id,
         UserName: user.UserName,
         Email: user.Email,
+        role: user.Role, // ✅ send role to frontend
       },
     });
   } catch (error) {
